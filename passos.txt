@@ -1,0 +1,14 @@
+git config --global user.name matheusf21
+git config --global user.email matheusferreiradelima21@gmail.com
+
+Criar um projeto React Native com Expo:
+npx create-expo-app@latest conversor --template blank
+
+cd conversor
+
+npx expo install react-dom react-native-web @expo/metro-runtime
+
+npm i
+
+npx expo start --localhost --android
+
