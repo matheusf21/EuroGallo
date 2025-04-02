@@ -1,136 +1,141 @@
-import { useState } from 'react';
-import { StatusBar } from 'expo-status-bar';
-import { Keyboard, TouchableOpacity } from 'react-native';
-import { StyleSheet, Text, View, SafeAreaView, TextInput } from 'react-native';
-import Ionicons from "@expo/vector-icons/Ionicons";
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StatusBar, StyleSheet } from 'react-native';
 
-export default function App() {
-  const [euro, setEuro] = useState(null);
-  const [real, setReal] = useState(null);
-  const [message, setMessage] = useState("Digite um valor em Euros:");
-  const [textButton, setTextButton] = useState("Converter");
-  const taxaCambio = 5.50; // Simulação de taxa fixa
+const CurrencyConverter = () => {
+  const [euroValue, setEuroValue] = useState('');
+  const [realValue, setRealValue] = useState('');
+  const [exchangeRate, setExchangeRate] = useState(null);
 
-  function converterMoeda() {
-    if (euro != null && euro > 0) {
-      Keyboard.dismiss();
-      setReal((euro * taxaCambio).toFixed(2));
-      setMessage("O valor em Reais é:");
-      setTextButton("Converter novamente");
-      setEuro(null);
-    } else {
-      setReal(null);
-      setMessage("Digite um valor válido em Euros:");
-      setTextButton("Converter");
+  useEffect(() => {
+    fetchExchangeRate();
+  }, []);
+
+  const fetchExchangeRate = async () => {
+    try {
+      const response = await fetch('https://api.exchangerate-api.com/v4/latest/EUR');
+      const data = await response.json();
+      setExchangeRate(data.rates.BRL);
+    } catch (error) {
+      console.error('Erro ao buscar taxa de câmbio:', error);
     }
-  }
+  };
+
+  const convertToReal = () => {
+    if (euroValue && exchangeRate) {
+      setRealValue((parseFloat(euroValue) * exchangeRate).toFixed(2));
+    }
+  };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.titleContainer}>
-        <Text style={styles.title}>Euro para Real</Text>
+    <View style={styles.container}>
+      <StatusBar backgroundColor="#1E1E1E" barStyle="light-content" />
+      <View style={styles.header}>
+        <Text style={styles.headerText}>Conversor de Moeda</Text>
       </View>
-      <View style={styles.content}>
-        <Text style={styles.subTitle}>Conversor de Moeda</Text>
-        
-        <View>
-          <Text style={styles.label}>Valor em Euros (€)</Text>
-          <TextInput
-            style={styles.input}
-            value={euro ?? ''}
-            onChangeText={setEuro}
-            placeholder='Ex. 10'
-            keyboardType='numeric'
-          />
-        </View>
 
-        <TouchableOpacity 
-          style={styles.button}
-          onPress={converterMoeda}
-        >
-          <Ionicons name="cash-outline" size={24} color="#fff" />
-          <Text style={styles.text}>{textButton}</Text>
+      {exchangeRate && (
+        <Text style={styles.exchangeRate}>Cotação Atual: €1 = R${exchangeRate.toFixed(2)}</Text>
+      )}
+
+      <View style={styles.content}>
+        <Text style={styles.label}>Valor em Euros (€)</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Ex. 10"
+          placeholderTextColor="#888"
+          keyboardType="numeric"
+          value={euroValue}
+          onChangeText={setEuroValue}
+        />
+        <TouchableOpacity style={styles.button} onPress={convertToReal}>
+          <Text style={styles.text}>Converter para Reais</Text>
         </TouchableOpacity>
 
-        <View style={styles.resultContainer}>
-          <Text style={styles.resultText}>{message}</Text>
-          <Text style={styles.resultValue}>{real ? `R$ ${real}` : ''}</Text>
-        </View>
+        {realValue && (
+          <View style={styles.resultContainer}>
+            <Text style={styles.resultLabel}>Resultado:</Text>
+            <Text style={styles.resultValue}>R$ {realValue}</Text>
+          </View>
+        )}
       </View>
-      <StatusBar style='light' />
-    </SafeAreaView>
+    </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F0F0F0',
+    backgroundColor: '#121212',
+    padding: 20,
+    justifyContent: 'flex-start', // Move o conteúdo para cima
   },
-  titleContainer: { 
+  header: {
     alignItems: 'center',
+    height: 60,
+    backgroundColor: '#1E1E1E',
+    paddingHorizontal: 20,
+    borderRadius: 10,
     justifyContent: 'center',
-    height: 120,
-    backgroundColor: '#0077B6',
-    borderBottomStartRadius: 25,
-    borderBottomEndRadius: 25,
+    marginBottom: 10, // Reduz espaço abaixo do cabeçalho
   },
-  title: {
-    color: "#fff",
-    fontSize: 28,
+  headerText: {
+    color: '#FFF',
+    fontSize: 22,
     fontWeight: 'bold',
+  },
+  exchangeRate: {
+    textAlign: 'center',
+    fontSize: 16,
+    color: '#FFF',
+    marginBottom: 45, // Reduz espaço abaixo da cotação
   },
   content: {
-    flex: 1,
-    padding: 40,
-  },
-  subTitle: {
-    textAlign: 'center',
-    fontSize: 22,
-    color: '#0077B6',
-    fontWeight: 'bold',
-    marginBottom: 30,
+    alignItems: 'center',
   },
   label: {
     fontSize: 18,
-    color: '#000',
+    color: '#DDD',
+    marginBottom: 5,
   },
   input: {
+    width: '100%',
     height: 45,
+    backgroundColor: '#1E1E1E',
+    borderRadius: 10,
+    paddingHorizontal: 15,
     fontSize: 18,
-    borderBottomWidth: 1,
-    borderColor: '#0077B6',
-    marginBottom: 20,
+    color: '#FFF',
+    marginBottom: 25, // Reduz espaço entre input e botão
   },
   button: {
     width: '100%',
-    paddingVertical: 15,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#0096C7',
+    paddingVertical: 12,
+    backgroundColor: '#008000',
     borderRadius: 10,
-    marginTop: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   text: {
-    color: '#fff',
-    fontSize: 20,
+    color: '#FFF',
+    fontSize: 18,
     fontWeight: 'bold',
-    marginLeft: 5,
   },
   resultContainer: {
-    flex: 1,
+    marginTop: 15, // Reduz espaço acima do resultado
     alignItems: 'center',
-    justifyContent: 'center',
   },
-  resultText: {
+  resultLabel: {
     fontSize: 18,
-    color: '#0096C7',
+    color: '#DDD',
     fontWeight: 'bold',
   },
   resultValue: {
-    fontSize: 36,
-    color: '#0096C7',
+    fontSize: 34,
+    color: '#008000',
     fontWeight: 'bold',
+    marginTop: 5,
   },
 });
+
+
+export default CurrencyConverter;
